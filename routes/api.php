@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\PayPalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,3 +18,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Route::post('/v1/process-transaction', [PayPalController::class, 'processTransaction'])->name('processTransaction');
+Route::post('/v1/create-transaction', [PayPalController::class, 'createTransaction'])->name('createTransaction');
+Route::post('/v1/process-transaction', [PayPalController::class, 'processTransaction'])->name('processTransaction');
+Route::post('/v1/success-transaction', [PayPalController::class, 'successTransaction'])->name('successTransaction');
+Route::get('/v1/cancel-transaction', [PayPalController::class, 'cancelTransaction'])->name('cancelTransaction');
