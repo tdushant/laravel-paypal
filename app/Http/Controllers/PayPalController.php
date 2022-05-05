@@ -53,6 +53,8 @@ class PayPalController extends Controller
                 ]
             ]
         ]);
+        echo "<pre>";
+        print_r($response);die;
         return response()->json($response);
     }
 

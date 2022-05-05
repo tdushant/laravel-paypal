@@ -24,3 +24,4 @@ Route::post('/v1/create-transaction', [PayPalController::class, 'createTransacti
 Route::post('/v1/process-transaction', [PayPalController::class, 'processTransaction'])->name('processTransaction');
 Route::post('/v1/success-transaction', [PayPalController::class, 'successTransaction'])->name('successTransaction');
 Route::get('/v1/cancel-transaction', [PayPalController::class, 'cancelTransaction'])->name('cancelTransaction');
+Route::post('/v1/pay-with-card', [PayPalController::class, 'PayWithCard'])->name('PayWithCard');

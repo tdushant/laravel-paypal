@@ -22,6 +22,7 @@
                     
                     <input type="number" id="amount">
                     <a class="btn btn-primary m-3" href="javascript:void(0)" id="addfund"> Add Fund</a>
+    
                 </div>
             </div>
         </div>

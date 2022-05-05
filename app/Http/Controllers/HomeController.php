@@ -34,10 +34,10 @@ class HomeController extends Controller
 
     public function payment(Request $request)
     {
-        $gateway = Omnipay::create('PayPal_Pro');
-        $gateway->setUsername(env('PAYPAL_USER'));
-        $gateway->setPassword(env('PAYPAL_USER'));
-        $gateway->setSignature(PAYPAL_API_SIGNATURE);
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $paypalToken = $provider->getAccessToken();
+        createOrder();
         $gateway->setTestMode(true);
         echo "<pre>";
         print_r($gateway);die;
