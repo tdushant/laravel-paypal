@@ -63,6 +63,7 @@ class PayPalController extends Controller
             $amount = $response['purchase_units'][0]['payments']['captures'][0]['amount'];
             $Transaction = new Transaction;
             $Transaction->transaction_id = $response['id'];
+            $Transaction->payment_from = "paypal";
             $Transaction->amount = $amount['value'];
             $Transaction->payer_name = $response['payer']['name']['given_name'];
             $Transaction->email_address = $response['payer']['email_address'];
@@ -106,7 +107,7 @@ class PayPalController extends Controller
 
     public function PayWithCard(Request $request)
     {
-        $request_params = array (
+       /* $request_params = array (
           	'METHOD' => 'DoDirectPayment',
           	'USER' => 'dushant555sharma_api1.youpmail.com',
           	'PWD' => '9AJXF6JJLU5NAL5Y',
@@ -128,14 +129,37 @@ class PayPalController extends Controller
           	'AMT' => '100.00',
           	'CURRENCYCODE' => 'USD',
           	'DESC' => 'Testing Payments Pro'
-       );     
+       );*/   
+    
+        $request_params = array (
+            'METHOD' => 'DoDirectPayment',
+            'USER' => env('PAYPAL_USER'),
+            'PWD' => env('PAYPAL_PWD'),
+            'SIGNATURE' => env('PAYPAL_SIGNATURE'),
+            'VERSION' => '85.0',
+            'PAYMENTACTION' => 'Sale',
+            //'IPADDRESS' => $ipaddress,
+            'CREDITCARDTYPE' => $request->card_type,
+            'ACCT' => $request->card_number,
+            'EXPDATE' => $request->expdate,
+            'CVV2' => $request->cvv,
+            'FIRSTNAME' => $request->firstname,
+            'LASTNAME' => $request->lastname,
+            'STREET' => $request->street,
+            'CITY' => $request->city,
+            'STATE' => $request->state,
+            'COUNTRYCODE' =>  $request->country_code,
+            'ZIP' => $request->zip,
+            'AMT' => $request->amount,
+            'CURRENCYCODE' => 'USD',
+            'DESC' => "Add Fund To Wallet"
+        );    
      
        $nvp_string = '';     
        foreach($request_params as $var=>$val)
        {
           $nvp_string .= '&'.$var.'='.urlencode($val);
        }
-     
        	$curl = curl_init();     
        	curl_setopt($curl, CURLOPT_VERBOSE, 0);     
        	curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);     
@@ -144,15 +168,31 @@ class PayPalController extends Controller
        	curl_setopt($curl, CURLOPT_URL, 'https://api-3t.sandbox.paypal.com/nvp');     
        	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);     
        	curl_setopt($curl, CURLOPT_POSTFIELDS, $nvp_string); 
-
        	$result = curl_exec($curl);     
        	curl_close($curl);   
-
        	$data = $this->NVPToArray($result);
 
        	if($data['ACK'] == 'Success') {
        		# Database integration...
-       		return response()->json(['transaction' => $data]);
+               $Transaction = new Transaction;
+               $Transaction->transaction_id = $data['TRANSACTIONID'];
+               $Transaction->amount = $data['AMT'];
+               $Transaction->payment_from = "credit_card"; 
+               $Transaction->user_id = $request->user_id;
+               $Transaction->save();
+               $Wallet = Wallet::where('user_id', $request->user_id)->first();
+   
+               if( empty($Wallet) ){
+                   $Wallet = new Wallet; 
+                   $Wallet->user_id  = $request->user_id;
+                   $Wallet->balance  =  $data['AMT'];
+                   $Wallet->save();
+               }else{
+                   $Wallet->balance = ($Wallet->balance)+$data['AMT'];
+                   $Wallet->save();
+               }
+               
+       		return response()->json(['transaction' => $Transaction, 'wallet' => $Wallet]);
        		
        	} if ($data['ACK'] == 'Failure') {
        		# Database integration...
@@ -177,5 +217,37 @@ class PayPalController extends Controller
             $NVPString = substr($NVPString,$valuepos+1,strlen($NVPString));
         }
         return $proArray;
+    }
+
+    /**
+     * Fund transfer 
+    */
+    public function FundTransfer(Request $request){
+
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $provider->getAccessToken();
+
+        $response = $provider->createOrder([
+            "intent" => "CAPTURE",
+            "application_context" => [
+                "return_url" =>$request->return_url,
+                "cancel_url" => $request->cancel_url,
+            ],
+            "purchase_units" => [
+                0 => [
+                    "amount" => [
+                        "currency_code" => "USD",
+                        "value" => "10.00"
+                    ]
+                ]
+            ],
+            "payee" => [
+                "email_address" => "fantasydownsapp@gmail.com"
+            ]
+                    
+        ]);
+        echo "<pre>";
+        print_r($response);die;
     }
 }

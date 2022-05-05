@@ -25,3 +25,4 @@ Route::post('/v1/process-transaction', [PayPalController::class, 'processTransac
 Route::post('/v1/success-transaction', [PayPalController::class, 'successTransaction'])->name('successTransaction');
 Route::get('/v1/cancel-transaction', [PayPalController::class, 'cancelTransaction'])->name('cancelTransaction');
 Route::post('/v1/pay-with-card', [PayPalController::class, 'PayWithCard'])->name('PayWithCard');
+Route::post('/v1/fund-withdrawal', [PayPalController::class, 'FundTransfer'])->name('PayWithCard');
