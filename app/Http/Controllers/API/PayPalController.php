@@ -227,27 +227,51 @@ class PayPalController extends Controller
         $provider = new PayPalClient;
         $provider->setApiCredentials(config('paypal'));
         $provider->getAccessToken();
+        
+            $amount = ($request->amount);
+            $body= json_decode(
+            '{
+                "sender_batch_header":
+                {
+                  "email_subject": "Fund Transfer"
+                },
+                "items": [
+                {
+                  "recipient_type": "EMAIL",
+                  "receiver": '.$request->receiver_email.',
+                  "note": "'.$request->note.'",
+                  "amount":
+                  {
+                    "currency": "USD",
+                    "value": "'.$amount.'"
+                  }
+                }]
+              }',             
+            true);
 
-        $response = $provider->createOrder([
-            "intent" => "CAPTURE",
-            "application_context" => [
-                "return_url" =>$request->return_url,
-                "cancel_url" => $request->cancel_url,
-            ],
-            "purchase_units" => [
-                0 => [
-                    "amount" => [
-                        "currency_code" => "USD",
-                        "value" => "10.00"
+            $body = [
+                'sender_batch_header' => [
+                    'email_subject' => "Fund Transfer"
+                ],
+                'items' => [
+                    [
+                        'recipient_type' => 'EMAIL',
+                        "receiver" => $request->receiver_email,
+                        "note" => $request->note,
+                        "amount" => 
+                        [
+                            "currency" => "USD",
+                            "value" => $amount
+                        ]
                     ]
                 ]
-            ],
-            "payee" => [
-                "email_address" => "fantasydownsapp@gmail.com"
-            ]
-                    
-        ]);
-        echo "<pre>";
-        print_r($response);die;
+            ];
+        $response = $provider->createBatchPayout($body);
+        if($response['batch_header']['payout_batch_id']){
+            $showBatchPayoutDetails = $provider->showBatchPayoutDetails($response['batch_header']['payout_batch_id']);
+            return response()->json(['status' => true, 'data' => $showBatchPayoutDetails]);
+        }else{
+            return response()->json(['status' => false, 'error' => 'Something went wrong please contact to admin']);
+        }
     }
 }
